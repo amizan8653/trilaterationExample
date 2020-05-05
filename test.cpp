@@ -1,7 +1,3 @@
-/******************************************************************************
-// tested on https://www.onlinegdb.com/online_c++_compiler#
-
-*******************************************************************************/
 #include <math.h>
 #include <iostream>
 
@@ -48,9 +44,9 @@ struct Coordinate
     }
 };
 
-Coordinate sensorCoordinates[3];
+Coordinate knownCoordinates[3];
 
-Coordinate joystickMagnetCoordinate;
+Coordinate unknownCoordinate;
 
 
 // precompute constant data and store for each triplet of coordinates to do trilateration with.
@@ -72,9 +68,9 @@ struct TripletConstants{
 
     void precompute(){
 
-        Coordinate * p1 = &sensorCoordinates[coordinateIndexes[0]];
-        Coordinate * p2 = &sensorCoordinates[coordinateIndexes[1]];
-        Coordinate * p3 = &sensorCoordinates[coordinateIndexes[2]];
+        Coordinate * p1 = &knownCoordinates[coordinateIndexes[0]];
+        Coordinate * p2 = &knownCoordinates[coordinateIndexes[1]];
+        Coordinate * p3 = &knownCoordinates[coordinateIndexes[2]];
 
         // e1 = p2 - p1
         // e1 is the vector from p1 to p2
@@ -137,38 +133,29 @@ struct TripletConstants{
 TripletConstants sensorTriplets[1];
 
 
-void performTrilaterationIteration(const uint8_t centerSensorIndex){
-
-    // distances
-    // double d1 = sensorReadings[getLeft(centerSensorIndex)];
-    // double d2 = sensorReadings[centerSensorIndex];
-    // double d3 = sensorReadings[getRight(centerSensorIndex)];
+void performTrilaterationIteration(){
 
     double d1 = 13.341664;
     double d2 = 14.3527;
     double d3 = 14.282857;
 
     // precomputed constants
-    double h = sensorTriplets[centerSensorIndex].h;
-    double i = sensorTriplets[centerSensorIndex].i;
-    double j = sensorTriplets[centerSensorIndex].j;
-    Coordinate * e1 = &sensorTriplets[centerSensorIndex].e1;
-    Coordinate * e2 = &sensorTriplets[centerSensorIndex].e2;
-    Coordinate * e3 = &sensorTriplets[centerSensorIndex].e3;
+    double h = sensorTriplets[0].h;
+    double i = sensorTriplets[0].i;
+    double j = sensorTriplets[0].j;
+    Coordinate * e1 = &sensorTriplets[0].e1;
+    Coordinate * e2 = &sensorTriplets[0].e2;
+    Coordinate * e3 = &sensorTriplets[0].e3;
 
-    Coordinate * p1 = &sensorCoordinates[sensorTriplets[centerSensorIndex].coordinateIndexes[0]];
+    Coordinate * p1 = &knownCoordinates[sensorTriplets[0].coordinateIndexes[0]];
     
     // computations
     double u = (d1*d1 - d2*d2 + h*h) / (2*h);
     double v = (d1*d1 - d3*d3 + i*(i - 2*u) + j*j) / (2*j);
     double w = sqrt(d1*d1 - u*u - v*v);
-    std::cout << "d1: " << d1 << "\n";
-    std::cout << "u: " << u << "\n";
-    std::cout << "v: " << v << "\n";
-    std::cout << "w: " << w << "\n";
 
-    // store the computation in joystickMagnetCoordinate
-    joystickMagnetCoordinate.add(
+    // store the computation in unknownCoordinate
+    unknownCoordinate.add(
         p1->x + u*e1->x + v*e2->x + w*e3->x,
         p1->y + u*e1->y + v*e2->y + w*e3->y,
         p1->z + u*e1->z + v*e2->z + w*e3->z
@@ -180,31 +167,22 @@ void performTrilaterationIteration(const uint8_t centerSensorIndex){
 
 int main(){
 
-    sensorCoordinates[0].assign(3.0, -4.0, 5.0);
+    knownCoordinates[0].assign(3.0, -4.0, 5.0);
 
-    sensorCoordinates[1].assign(1.0, 2.0, -3.0);
+    knownCoordinates[1].assign(1.0, 2.0, -3.0);
 
-    sensorCoordinates[2].assign(-6.0, 6.0, 6.0);
+    knownCoordinates[2].assign(-6.0, 6.0, 6.0);
 
     sensorTriplets[0].assign(0, 1, 2);
 
     sensorTriplets[0].precompute();
-    
-    
-    sensorTriplets[0].e1.print();
-    sensorTriplets[0].e2.print();
-    sensorTriplets[0].e3.print();
-    std::cout << "h: " << sensorTriplets[0].h << "\n";
-    std::cout << "i: " << sensorTriplets[0].i << "\n";
-    std::cout << "j: " << sensorTriplets[0].j << "\n";
-    std::cout << "t: " << sensorTriplets[0].t << "\n";
 
-    joystickMagnetCoordinate.clear();
+    unknownCoordinate.clear();
 
-    performTrilaterationIteration(0);
+    performTrilaterationIteration();
 
     // value should be (8,8,8)
-    joystickMagnetCoordinate.print();
+    unknownCoordinate.print();
 
     return 0;
 }
